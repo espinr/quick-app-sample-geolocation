@@ -1,5 +1,31 @@
 {
     "message":{
-        "hello": "Codelab (sp)"
+        "titlebar": {
+            "title": "Where am I?"     
+        },
+        "intro": {
+            "title": "QuickApp Location Service",
+            "help": "Press the following buttom to use the geolocation capabilities of Quick Apps",
+            "loading": "Getting location...",
+            "locate_button": "Give me info!",
+            "now_find": "Now find a ",
+            "find_help": "or change type",
+            "search": "Search"
+        },
+        "results": {
+            "title": "{type} Nearby",
+            "no_results": "Sorry... No {type_plural} arround :-/",
+            "loading": "Fetching results..." 
+        },
+        "facilities": {
+            "bar": "Bar | Bars",
+            "hotel": "Hotel | Hotels",
+            "casino": "Casino | Casinos", 
+            "restaurant": "Restaurant | Restaurants", 
+            "doctor": "Doctor | Doctors",
+            "gym": "Gym | Gyms",
+            "library": "Library | Libraries",
+            "stadium": "Stadium | Stadiums"
+        }
     }
 }

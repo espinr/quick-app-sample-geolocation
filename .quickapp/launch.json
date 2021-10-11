@@ -14,5 +14,8 @@
       "elementMode": false
     }
   ],
-  "currentWidgetUri": "Hello"
+  "currentWidgetUri": "Intro",
+  "currentAlias": "Default",
+  "lastAlias": "Default",
+  "lastWidgetUri": "Intro"
 }

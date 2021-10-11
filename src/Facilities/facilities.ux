@@ -1,0 +1,157 @@
+<template>
+    <div class="container">
+        <list id="list">
+          <list-item type="facility" for="{{results}}">
+            <div onclick="detailsFacility({{$item.name}}, {{$item.distance}})" class="facility">
+              <div>
+                <text class="name">{{$item.name}}</text>
+                <text class="distance">(at {{$item.distance}} metres)</text> 
+              </div>
+              <text class="address">{{$item.address}}</text>
+              <text class="phone">{{$item.phone}}</text>                                    
+            </div>
+          </list-item>
+          <list-item if={{noResults}} type="facility" class="noresults">
+            <text>{{ $t("message.results.no_results", { type_plural: $tc("message.facilities."+type, 2)}) }}</text>
+          </list-item>
+          <list-item if={{loading}} type="facility">
+            <progress class="progress" type="circular"></progress>
+            <text>{{ $t("message.results.loading") }}</text>
+          </list-item>
+        </list>
+    </div>
+</template>
+
+<script>
+  import fetch from '@system.fetch'
+  import prompt from '@system.prompt'
+  import { secrets } from '../Common/secrets.js' 
+
+  const NEARBY_SEARCH = "https://siteapi.cloud.huawei.com/mapApi/v1/siteService/nearbySearch"
+
+  module.exports = {
+    data: {
+      noResults: false,
+      type: '',
+      loading: false,
+      results: []
+    },
+    
+    poststring() {
+      const self = this
+      this.loading = true
+      let dataQuery = JSON.stringify({
+          query: self.type,
+          location: {
+            lng: self.lng,
+            lat: self.lat,
+          },
+          radius: 1000,
+          poiType: 'ESTABLISHMENT',
+          language: 'en',
+          pageIndex: 1,
+          pageSize: 20
+        });
+
+      // More information of this service:
+      // https://developer.huawei.com/consumer/en/doc/development/HMSCore-References/webapi-nearby-search-0000001050163873
+      fetch.fetch({
+        url: `${NEARBY_SEARCH}?key=${encodeURIComponent(secrets.API_KEY)}`,
+        header : {
+          "Content-Type": "application/json", 
+          "Accept": "application/json"
+        },
+        responseType: "json",
+        data: dataQuery,
+        method:"POST",
+        success: function (ret) {
+          console.log(JSON.stringify(ret))
+          if (JSON.parse(ret.data.returnCode) === 0) {
+            for (let i=0 ; i < ret.data.sites.length; i++) {
+              if (ret.data.sites[i].name && ret.data.sites[i].formatAddress && 
+                  ret.data.sites[i].poi && ret.data.sites[i].poi.phone && ret.data.sites[i].distance) {
+                self.results.push({
+                  name: ret.data.sites[i].name,
+                  address: ret.data.sites[i].formatAddress,
+                  phone: ret.data.sites[i].poi.phone.replaceAll(' ', ''),
+                  distance: ret.data.sites[i].distance
+                  })
+              }
+            }
+          }
+        },
+        fail: function (msg, code) {
+          console.error(msg, code)
+        },
+        complete: function () {
+          console.log("complete")
+          self.loading = false
+          self.noResults = self.results.length === 0
+        }
+      })
+    },
+    onInit() {
+      // Calling the API, based on the type passed as parameter
+      this.poststring(this.type);
+      // Set up the title of the main page
+      this.$page.setTitleBar({
+        text: `${this.$t('message.results.title', { type: this.$tc(`message.facilities.${this.type}`,2) })}`
+      });      
+    },
+    detailsFacility(name, distance){
+      const message = `${name} is ${distance} from here`
+      prompt.showToast({
+        message: message,
+        duration: "10000",
+        gravity: "center"
+      })
+    }
+  }
+</script>
+
+<style>
+  .container {
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+  }
+
+  .title {
+    font-size: 50px;
+  }
+
+  .facility {
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 5px;
+    width: 100%;
+    background-color: #A7AB2E;
+    color: #ffffff;
+    border-radius: 5px;
+    border-width: 2px;
+  }
+
+  .facility .name {
+    font-size: 36px;
+    font-weight: bold;
+  }
+
+  .facility .address {
+    font-size: 24px;
+    font-style: italic;
+  }
+
+  .facility .distance {
+    font-size: 24px;
+  }
+
+  .facility .phone {
+    font-weight: bold;
+  }
+
+  .noresults text {
+    width: 100%;
+    text-align: center;
+  }
+</style>

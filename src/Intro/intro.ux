@@ -1,0 +1,183 @@
+<template>
+  <div class="container">
+    <div class="header">
+      <text class="heading">{{ $t("message.intro.title") }}</text>
+    </div>
+    <div class="sensors">
+      <text class="description">{{ $t("message.intro.help") }}</text>
+      <input class="button" type="button" value="{{ $t('message.intro.locate_button') }}" onclick="locateMe"/>
+      <list class="list">
+        <list-item if="loading" type="geo-item">
+          <progress class="progress" type="circular"></progress>
+          <text>{{ $t("message.intro.loading") }}</text>
+        </list-item>
+        <list-item for={{geo}} type="geo-item">
+          <text>{{$item.key}}: {{$item.value.toFixed(3)}}</text>
+        </list-item>
+      </list>
+    </div>
+    <div class="details">
+      <div  class="search-container">
+        <div if="showButton" class="search-details">
+          <div>
+            <text>{{ $t("message.intro.now_find") }}</text>
+            <picker class="picker" type="text" range="{{nameTypes}}" value="{{nameTypes[currentTypeIndex]}}" onchange="changeType"></picker>
+            <text class="help">&lt;- {{ $t("message.intro.find_help") }}</text>
+          </div>
+          <input class="button" type="button" value="{{ $t('message.intro.search') }}" onclick="showResult"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import geolocation from '@system.geolocation'
+  import router from '@system.router'
+
+  // constants used in i18n 
+  const facilityTypes = ['hotel', 'bar', 'restaurant', 'casino', 'doctor', 'gym', 'library', 'stadium']
+
+  module.exports = {
+    data: {
+      types: facilityTypes,
+      nameTypes: [],
+      showButton: false,
+      loading: false,
+      currentTypeIndex: 0,
+      trigger: false,
+      lat: 0,
+      lng: 0,
+      geo: []
+    },
+    onInit() {
+      // Set up the title of the main page
+      this.$page.setTitleBar({
+        text: this.$t('message.titlebar.title')
+      });
+      this.nameTypes = facilityTypes.map((type) => this.$tc("message.facilities."+ type, 1))
+    },
+    changeType (e) {
+      // e.newSelected contains the index of the types array that was selected
+      this.currentTypeIndex = e.newSelected;
+    },
+    locateMe() {
+      this.loading = true;
+      const self = this;
+      self.geo= []
+      geolocation.getLocation({
+        coordType:"wgs84", 
+        timeout: 40000,   // 40 seconds timeout
+        success: function (ret) {
+          console.log('geolocation.getLocation (success):' + JSON.stringify(ret));
+          self.lat = ret.latitude;
+          self.lng = ret.longitude;
+          for (let key in ret) {
+            self.geo.push({ key: key, value: ret[key] });
+          }
+          self.showButton = true; 
+        },
+        fail: function (msg, code) {
+          console.log('geolocation.getLocation (fail):' + code + ': ' + msg)
+        },
+        complete: function () {
+          console.log('geolocation.getLocation (complete)')
+          self.loading = false
+          self.trigger = true
+        }
+      })
+    },
+    showResult: function(){
+      router.push({
+        uri: '/Facilities',
+        params: {
+          type: this.types[this.currentTypeIndex],
+          lng: this.lng,
+          lat: this.lat
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  .container {
+    flex-direction: column;
+    align-items: center;
+    align-content: space-around;
+    justify-content: center;
+    width: 100%;
+    background-color: #eaeaea;
+  }
+
+  .header {
+    height: 20%;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  } 
+
+  .sensors {
+    height: 60%;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  } 
+
+  .details {
+    height: 20%;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  } 
+
+  .heading {
+    font-size: 60px;
+  }
+  .description {
+    font-size: 20px;
+    margin-bottom: 10px; 
+  }
+
+  .list {
+    height: 100%;
+    padding: 15px;
+  }
+
+  .button {
+    background-color: #A7AB2E;
+    color: #000000;
+    padding: 5px 10px;
+    border-radius: 20px;
+  }
+
+  .search-container {
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-details {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .progress {
+    width: 100px;
+    height: 100px;
+  }
+
+  .picker {
+    padding-left: 10px;
+    font-size: 40px;
+    font-weight: bold;
+  }
+
+  .help {
+    margin-left: 10px;
+    font-size: 20px;
+  }
+</style>
